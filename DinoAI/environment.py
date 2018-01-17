@@ -10,8 +10,7 @@ import cv2, time
 import numpy as np
 import grabscreen
 import pyautogui
-from time import sleep
-from ringBuffer import RingBuffer
+from collections import deque
 
 
 class Environment:
@@ -29,23 +28,24 @@ class Environment:
         self.game_started = False
         self.render_game = False
         self.game_over_arr = np.load(game_over_np)
-        self.buffer = RingBuffer(4)
-        self.last_buffer = RingBuffer(4)
+        self.buffer = deque(maxlen=4)
 
     def grab_screen(self):
         self.previous_screenshot = self.screenshot
-        self.screenshot = grabscreen.grab_screen((10, 250, 950, 500))
+        self.screenshot = grabscreen.grab_screen((10, 250, 950, 500)) #Laptop screen
+        #self.screenshot = grabscreen.grab_screen((10, 350, 1910, 930)) #4k monitor
         self.buffer.appendleft(self.get_game_pixels())
 
         if self.render_game is True:
-            #render_image(self.get_game_pixels())
+            render_image(self.get_game_pixels())
+            """
             for i in range(len(self.buffer)):
                 cv2.imshow(str(i), np.array(self.buffer[i]))
                 if cv2.waitKey(25) & 0xFF == ord('q'):
-                    cv2.destroyAllWindows()
+                    cv2.destroyAllWindows()"""
 
     def get_game_pixels(self):
-        im = self.screenshot[0:250, 0:500]
+        im = self.screenshot[0:250, 0:500]  # Laptop screen
         return im
 
     def get_score(self):
@@ -132,25 +132,21 @@ if __name__ == "__main__":
     while max_score <= 500:
         i += 1
         env.start_game()
-        env.render_game = True
+        #env.render_game = True
         state, score, game_over = env.take_action(None)
 
-        while game_over is False:
+        while not game_over:
+            print(game_over)
             action = agent.act(state)
             next_state, score, game_over = env.take_action(env.available_actions[action])
             reward = score if not game_over else -10
             agent.remember(state, action, reward, next_state, game_over)
             state = next_state
 
-        print(agent.get_prioritized_batch())
+        #agent.replay_prioritized(64)H
+
         if score > max_score:
             max_score = score
             agent.save("agent_weights.h5")
-        #replay_size = 10 if len(agent.memory) >= 5 else len(agent.memory)
-        #agent.replay(replay_size)
-
-        print("Episode: {}/500, score:{}, max score: {}".format(i, score, max_score))
-
-
-
-#cv2.destroyAllWindows()
+        print("test")
+        print("Episode: {}, score:{}, max score: {}".format(i, score, max_score))

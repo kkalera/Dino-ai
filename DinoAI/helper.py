@@ -3,6 +3,10 @@ import numpy as np
 
 
 def render_image(image, name=""):
+<<<<<<< HEAD
+=======
+    #cv2.imshow(name, cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+>>>>>>> ec144c9ef7be7ea2b2fa5d797b613406475a0728
     cv2.imshow(name, image)
     if cv2.waitKey(25) & 0xFF == ord('q'):
         cv2.destroyAllWindows()

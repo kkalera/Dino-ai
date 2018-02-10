@@ -2,7 +2,7 @@ import random
 import numpy as np
 from collections import deque
 from keras.layers import *
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.optimizers import Adam
 
 
@@ -49,7 +49,9 @@ class DQNAgent:
         return np.argmax(act_values[0])
 
     def replay(self, batch_size):
-        batch = random.sample(self.memory, batch_size)
+        length = batch_size if batch_size <= len(self.memory) else len(self.memory) - 1
+        batch = random.sample(self.memory, length)
+        print("Replaying for {} experiences".format(len(batch)))
         for state, action, reward, next_state, done in batch:
             target = reward
             if not done:
@@ -62,13 +64,33 @@ class DQNAgent:
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
 
-    def get_prioritized_batch(self):
+    def replay_prioritized(self, batch_size):
+        batch = self.get_prioritized_batch(batch_size)
+        print("Replaying for {} experiences".format(len(batch)))
+
+        for state, action, reward, next_state, done in batch:
+            target = reward
+            if not done:
+                target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
+
+            target_f = self.model.predict(state)
+            target_f[0][action] = target
+            self.model.fit(state, target_f, epochs=1, verbose=0)
+
+            if self.epsilon > self.epsilon_min:
+                self.epsilon *= self.epsilon_decay
+
+    def get_prioritized_batch(self, batch_size):
         mem = np.copy(self.memory)
-        np.sort(mem.view('i8,i8,i8,i8,i8'), order=['f2'], axis=0).view(np.int)
-        return mem
+        mem = mem[mem[:, 2].astype(np.int).argsort()]
+
+        length = batch_size if batch_size <= len(mem) else len(mem)-1
+        return mem[: length]
 
     def load(self, savename):
-        self.model.load_weights(savename)
+        #self.model.load_weights(savename)
+        self.model = load_model(savename)
 
     def save(self, savename):
-        self.model.save_weights(savename)
+        #self.model.save_weights(savename)
+        self.model.save(savename)

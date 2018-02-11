@@ -5,7 +5,7 @@ from PIL import Image
 from io import BytesIO
 from DinoAI import helper
 import numpy as np
-# from DinoAI.DQNAgent import DQNAgent
+from DinoAI.DQNAgent import DQNAgent
 
 
 class DinoEnvironment:
@@ -18,7 +18,7 @@ class DinoEnvironment:
         options = ChromeOptions()
         options.add_argument("--window-size=%s" % self.window_size)
         browser = Chrome(
-            executable_path="c:/program files/chromedriver/chromedriver.exe",
+            executable_path="c:/program files (x86)/chromedriver/chromedriver.exe",
             options=options)
         browser.get("chrome://dino")
         return browser
@@ -45,7 +45,8 @@ class DinoEnvironment:
         # Finally we convert the digits to integers and return the result
         return int(score_digits)
 
-    def get_screen(self, d):
+    def get_screen(self):
+        d = self.browser
         element = d.find_element_by_class_name("runner-canvas")
         img = d.execute_script("return arguments[0].toDataURL('img/png').substring(21)", element)
         img = base64.b64decode(img)
@@ -62,9 +63,10 @@ class DinoEnvironment:
 
 
 if __name__ == "__main__":
-    env = DinoEnvironment(render=True)
-    # agent = DQNAgent((75,150), action_size=2, memory_size=3000)
+    env = DinoEnvironment(render=False)
+    agent = DQNAgent((4, 75, 150), action_size=2, memory_size=3000)
 
     while env.game_over() is False:
         env.key_toggle_up()
         print(env.get_score())
+

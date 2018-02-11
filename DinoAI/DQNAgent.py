@@ -17,6 +17,7 @@ class DQNAgent:
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self.build_model()
+        self.random_actions = 0
 
     def build_model(self):
         model = Sequential()
@@ -42,6 +43,7 @@ class DQNAgent:
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:  # Take a random action
+            self.random_actions += 1
             return random.randrange(self.action_size)
 
         # Else: make a prediction
@@ -59,7 +61,7 @@ class DQNAgent:
 
             target_f = self.model.predict(state)
             target_f[0][action] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
+            self.model.fit(state, target_f, epochs=1, verbose=0, batch_size=1)
 
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
